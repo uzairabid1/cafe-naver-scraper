@@ -98,6 +98,7 @@ def extract(driver, output_file_path):
         time_of_scraping = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
         # getting data
         article_id = get_article_id(link)
+
         category = driver.find_element(
             By.XPATH, "//div[@class='ArticleTitle']/a").text.replace(" •  ", "")
         text_type = "Post"
@@ -116,8 +117,12 @@ def extract(driver, output_file_path):
         n_comments = driver.find_element(
             By.XPATH, "(//a[@class='button_comment'])[1]/strong").text.strip()
 
-        main_text = driver.find_element(
-            By.XPATH, "//div[@class='article_viewer']").text.strip()
+        try:
+            main_text = driver.find_element(
+                By.XPATH, "//div[@class='article_viewer']/div[2]").text.strip()
+        except:
+             main_text = driver.find_element(
+                By.XPATH, "//div[@class='article_viewer']").text.strip()
 
         data = {
             "Time_of_Scraping": time_of_scraping,
@@ -151,28 +156,95 @@ def extract(driver, output_file_path):
         for button in comments_pagination:
             comments = driver.find_elements(
                 By.XPATH, "//li[@class='CommentItem']")
+            comment_idx = 1
             for idx in range(len(comments)):
-                text_type = "Comment"
-                comment = driver.find_element(
-                    By.XPATH, f"(//li[@class='CommentItem']/div/div/div[@class='comment_text_box'])[{idx+1}]").text.strip()
-                commentor_id = driver.find_element(
-                    By.XPATH, f"(//li[@class='CommentItem']/div/div/div[@class='comment_nick_box']/div)[{idx+1}]").text.strip()
-                time_of_comment = driver.find_element(
-                    By.XPATH, f"(//li[@class='CommentItem']/div/div/div[@class='comment_info_box']/span)[{idx+1}]").text.strip()
+                text_type = "Comment"                
                 try:
-                    is_reply_xp = driver.find_element(
-                        By.XPATH, f"(//li[@class='CommentItem']/div/div)[{idx+1}]/following::li[@class='CommentItem CommentItem--reply'][1]")
-                    is_reply = "True"
+                    comment_list = driver.find_element(By.XPATH,f"//ul[@class='comment_list']/li[{comment_idx+1}]")
                 except:
-                    is_reply = "False"
+                    comment_list = driver.find_element(By.XPATH,f"//ul[@class='comment_list']/li[{comment_idx}]")
 
-                if is_reply == "True":
-                    comment_id_replying = driver.find_element(
-                        By.XPATH, f"(//li[@class='CommentItem']/div/div)[{idx+1}]/following::li[@class='CommentItem CommentItem--reply'][1]/div/div/div[@class='comment_nick_box']/div").text.strip()
+                if 'reply' in comment_list.get_attribute('class'):     
+                    comment = driver.find_element(
+                    By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_text_box']").text.strip()
+                    commentor_id = driver.find_element(
+                    By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
+                    time_of_comment = driver.find_element(
+                    By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_info_box']/span").text.strip() 
+
+                    data = {
+                    "Time_of_Scraping": time_of_scraping,
+                    "Category": category,
+                    "Text_Type": text_type,
+                    "Posting_ID": article_id,
+                    "Title": title,
+                    "Writer_ID": writer_id,
+                    "Writer_Poistion": writer_position,
+                    "Time_of_Posting": time_of_posting,
+                    "Main_Text": main_text,
+                    "N_Views": n_views,
+                    "N_Likes": n_likes,
+                    "N_Comments": n_comments,
+                    "Comment_ID": comment_id,
+                    "Commentor_ID": commentor_id,
+                    "Time_of_Comment": time_of_comment,
+                    "Comment": comment,
+                    "Is_Reply_To_Comment": "FALSE",
+                    "Comment_ID_Replying": ""
+                    }
+                    comment_id += 1
+                    comment_idx += 1
+                    print(data)
+                    appendProduct(output_file_path, data)
+
+
+
+                    for reply_idx in range(comment_idx,comment_idx+100):
+                        #12
+                        comment_list = driver.find_element(By.XPATH,f"//ul[@class='comment_list']/li[{reply_idx}]")
+                        if 'reply' in comment_list.get_attribute('class'):
+                            is_reply = "TRUE"
+                            comment_idx += 1
+                            comment = driver.find_element(
+                                    By.XPATH, f"//ul[@class='comment_list']/li[{reply_idx}]/div/div/div[@class='comment_text_box']").text.strip()
+                            time_of_comment = driver.find_element(
+                                    By.XPATH, f"//ul[@class='comment_list']/li[{reply_idx}]/div/div/div[@class='comment_info_box']/span").text.strip()
+                            comment_id_replying = commentor_id
+                            data = {
+                            "Time_of_Scraping": time_of_scraping,
+                            "Category": category,
+                            "Text_Type": text_type,
+                            "Posting_ID": article_id,
+                            "Title": title,
+                            "Writer_ID": writer_id,
+                            "Writer_Poistion": writer_position,
+                            "Time_of_Posting": time_of_posting,
+                            "Main_Text": main_text,
+                            "N_Views": n_views,
+                            "N_Likes": n_likes,
+                            "N_Comments": n_comments,
+                            "Comment_ID": comment_id,
+                            "Commentor_ID": commentor_id,
+                            "Time_of_Comment": time_of_comment,
+                            "Comment": comment,
+                            "Is_Reply_To_Comment": is_reply,
+                            "Comment_ID_Replying": comment_id_replying
+                        }
+                            comment_id += 1
+                            print(data)
+                            appendProduct(output_file_path, data)
+                        else:  
+                            is_reply = "FALSE"                      
+                            break
                 else:
-                    comment_id_replying = ""
-
-                data = {
+                    is_reply = "FALSE"
+                    comment = driver.find_element(
+                    By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_text_box']").text.strip()
+                    commentor_id = driver.find_element(
+                    By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
+                    time_of_comment = driver.find_element(
+                    By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_info_box']/span").text.strip()
+                    data = {
                     "Time_of_Scraping": time_of_scraping,
                     "Category": category,
                     "Text_Type": text_type,
@@ -190,11 +262,17 @@ def extract(driver, output_file_path):
                     "Time_of_Comment": time_of_comment,
                     "Comment": comment,
                     "Is_Reply_To_Comment": is_reply,
-                    "Comment_ID_Replying": comment_id_replying
+                    "Comment_ID_Replying": ""
                 }
-                comment_id += 1
-                print(data)
-                appendProduct(output_file_path, data)
+                    comment_id += 1
+                    comment_idx += 1
+                    print(data)
+                    appendProduct(output_file_path, data)                 
+
+
+                
+
+               
 
             button.click()
             time.sleep(2)
