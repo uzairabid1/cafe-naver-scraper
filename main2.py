@@ -75,80 +75,130 @@ def get_article_id(url):
     return article_id
 
 
-def extract(driver, output_file_path):
+def extract(driver, output_file_path,url):
+    number = 93000
     links_flag = True
     first_flag = 1
-    while links_flag:
-        driver.switch_to.frame(driver.find_element(
-                By.XPATH, "//iframe[@id='cafe_main']"))
-        links_buttons = []
-        links_buttons_xp = driver.find_elements(By.XPATH,"//div[@class='prev-next']/a")
-        for links_b in links_buttons_xp:
-            links_buttons.append(links_b.get_attribute('href'))
+    while True:
+        link = url + f"/{number}"
         
-        if first_flag == 1:
-            start = first_flag
-        else:
-            start = 2
+
+        try:
+            driver.get(link)
+            time.sleep(2)
+            driver.refresh()
+            time.sleep(8)
+        except TimeoutException:
+            driver.refresh()
+            data = {
+                    "Time_of_Scraping": "NA",
+                    "Category": "NA",
+                    "Text_Type": "NA",
+                    "Posting_ID": number,
+                    "Title": "NA",
+                    "Writer_ID": "NA",
+                    "Writer_Poistion": "NA",
+                    "Time_of_Posting": "NA",
+                    "Main_Text": "NA",
+                    "N_Views": "NA",
+                    "N_Likes": "NA",
+                    "N_Comments": "NA",
+                    "Comment_ID": "NA",
+                    "Commentor_ID": "NA",
+                    "Time_of_Comment": "NA",
+                    "Comment": "NA",
+                    "Is_Reply_To_Comment": "NA",
+                    "Comment_ID_Replying": "NA"
+                }
+            print(data)
+            appendProduct(output_file_path, data)
+            continue
+
             
-        for link_idx in range(start,len(links_buttons)):
-            total_links = []
-            try:
-                driver.switch_to.frame(driver.find_element(
-                    By.XPATH, "//iframe[@id='cafe_main']"))
-            except:
-                pass
+        try:
+            driver.switch_to.frame(driver.find_element(By.XPATH, "//iframe[@id='cafe_main']"))
+        except:
+            pass
 
-            links = driver.find_elements(By.XPATH, "//div[@class='inner_list']/a[1]")
-            for link in links:
-                total_links.append(link.get_attribute('href'))
-
-            posting_id = 1
-            for link in total_links:
-                print(link)
-                try:
-                    driver.get(link)
-                except (TimeoutError,TimeoutException):
-                    continue
-                time.sleep(8)
-                try:
-                    driver.switch_to.frame(driver.find_element(
-                        By.XPATH, "//iframe[@id='cafe_main']"))
-                except:
-                    pass
-                current_datetime = datetime.now()
-                time_of_scraping = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        current_datetime = datetime.now()
+        time_of_scraping = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
                 # getting data
-                article_id = get_article_id(link)
-                try:
-                    category = driver.find_element(
-                    By.XPATH, "//div[@class='ArticleTitle']/a").text.replace(" •  ", "")
-                except:
-                    continue
-                text_type = "Post"
-                title = driver.find_element(
+        article_id = number
+        try:
+            category = driver.find_element(By.XPATH, "//div[@class='ArticleTitle']/a").text.replace(" •  ", "")
+        except:
+            data = {
+                    "Time_of_Scraping": "NA",
+                    "Category": "NA",
+                    "Text_Type": "NA",
+                    "Posting_ID": number,
+                    "Title": "NA",
+                    "Writer_ID": "NA",
+                    "Writer_Poistion": "NA",
+                    "Time_of_Posting": "NA",
+                    "Main_Text": "NA",
+                    "N_Views": "NA",
+                    "N_Likes": "NA",
+                    "N_Comments": "NA",
+                    "Comment_ID": "NA",
+                    "Commentor_ID": "NA",
+                    "Time_of_Comment": "NA",
+                    "Comment": "NA",
+                    "Is_Reply_To_Comment": "NA",
+                    "Comment_ID_Replying": "NA"
+                }
+            print(data)
+            appendProduct(output_file_path, data)
+            number += 1
+            continue
+        text_type = "Post"
+        try:
+            title = driver.find_element(
                     By.XPATH, "//h3[@class='title_text']").text.strip()
-                writer_id = driver.find_element(
+        except NoSuchElementException:
+             title = "NA"
+        try:
+            writer_id = driver.find_element(
                     By.XPATH, "//div[@class='profile_info']/div[1]/button").text.strip()
-                writer_position = driver.find_element(
+        except NoSuchElementException:
+             writer_id = "NA"
+        try:
+            writer_position = driver.find_element(
                     By.XPATH, "//div[@class='profile_info']/em").text.strip()
-                time_of_posting = driver.find_element(
+        except NoSuchElementException:
+             writer_position = "NA"
+        try:
+            time_of_posting = driver.find_element(
                     By.XPATH, "//span[@class='date']").text.strip()
-                n_views = driver.find_element(
+        except NoSuchElementException:
+             time_of_posting = "NA"
+        try:
+            n_views = driver.find_element(
                     By.XPATH, "//span[@class='count']").text.replace("조회", "").strip()
-                n_likes = driver.find_element(
+        except NoSuchElementException:
+             n_views = "NA"
+        try:
+            n_likes = driver.find_element(
                     By.XPATH, "//em[.='좋아요']/following-sibling::em").text.strip()
-                n_comments = driver.find_element(
+        except NoSuchElementException:
+             n_likes = "NA"
+        try:
+            n_comments = driver.find_element(
                     By.XPATH, "(//a[@class='button_comment'])[1]/strong").text.strip()
+        except NoSuchElementException:
+             n_comments = "NA"
 
-                try:
+        try:
                     main_text = driver.find_element(
                         By.XPATH, "//div[@class='article_viewer']/div[2]").text.strip()
-                except:
-                    main_text = driver.find_element(
+        except:
+                    try:
+                        main_text = driver.find_element(
                         By.XPATH, "//div[@class='article_viewer']").text.strip()
+                    except:
+                         main_text = "NA"
 
-                data = {
+        data = {
                     "Time_of_Scraping": time_of_scraping,
                     "Category": category,
                     "Text_Type": text_type,
@@ -168,19 +218,18 @@ def extract(driver, output_file_path):
                     "Is_Reply_To_Comment": "",
                     "Comment_ID_Replying": ""
                 }
-                print(data)
-                appendProduct(output_file_path, data)
-
-                comments_pagination = driver.find_elements(
+        print(data)
+        appendProduct(output_file_path, data)
+        number += 1
+        comments_pagination = driver.find_elements(
                     By.XPATH, "//div[@class='CommentBox']/div[@class='ArticlePaginate']/button")
-                if len(comments_pagination) == 0:
+        if len(comments_pagination) == 0:
                     end = 1
-                else:
+        else:
                     end = len(comments_pagination)+1
 
-                comment_id = 1
-
-                for page_idx in range(end):
+        comment_id = 1
+        for page_idx in range(end):
                     comments = driver.find_elements(
                         By.XPATH, "//li[@class='CommentItem']")
                     comment_idx = 1
@@ -197,10 +246,16 @@ def extract(driver, output_file_path):
                                 By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_text_box']").text.strip()
                             except:
                                 continue
-                            commentor_id = driver.find_element(
-                            By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
-                            time_of_comment = driver.find_element(
-                            By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_info_box']/span").text.strip() 
+                            try:
+                                commentor_id = driver.find_element(
+                                By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
+                            except NoSuchElementException:
+                                 commentor_id = "NA"
+                            try:
+                                time_of_comment = driver.find_element(
+                                By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_info_box']/span").text.strip() 
+                            except NoSuchElementException:
+                                 time_of_comment = "NA"
 
                             data = {
                             "Time_of_Scraping": time_of_scraping,
@@ -238,11 +293,20 @@ def extract(driver, output_file_path):
                                 if 'reply' in comment_list.get_attribute('class'):
                                     is_reply = "TRUE"
                                     comment_idx += 1
-                                    comment = driver.find_element(
+                                    try:
+                                        comment = driver.find_element(
                                             By.XPATH, f"//ul[@class='comment_list']/li[{reply_idx}]/div/div/div[@class='comment_text_box']").text.strip()
-                                    time_of_comment = driver.find_element(
+                                    except:
+                                         comment = "NA"
+                                    try:
+                                        time_of_comment = driver.find_element(
                                             By.XPATH, f"//ul[@class='comment_list']/li[{reply_idx}]/div/div/div[@class='comment_info_box']/span").text.strip()
-                                    new_commentor_id = driver.find_element(By.XPATH,f"//ul[@class='comment_list']/li[{reply_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
+                                    except:
+                                         time_of_comment = "NA"
+                                    try:
+                                        new_commentor_id = driver.find_element(By.XPATH,f"//ul[@class='comment_list']/li[{reply_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
+                                    except:
+                                         new_commentor_id = "NA"
                                     comment_id_replying = commentor_id
                                     data = {
                                     "Time_of_Scraping": time_of_scraping,
@@ -272,12 +336,21 @@ def extract(driver, output_file_path):
                                     break
                         else:
                             is_reply = "FALSE"
-                            comment = driver.find_element(
-                            By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_text_box']").text.strip()
-                            commentor_id = driver.find_element(
-                            By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
-                            time_of_comment = driver.find_element(
-                            By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_info_box']/span").text.strip()
+                            try:
+                                    comment = driver.find_element(
+                                    By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_text_box']").text.strip()
+                            except NoSuchElementException:
+                                 comment = "NA"
+                            try:
+                                commentor_id = driver.find_element(
+                                By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_nick_box']/div").text.strip()
+                            except:
+                                 commentor_id = "NA"
+                            try:
+                                time_of_comment = driver.find_element(
+                                By.XPATH, f"//ul[@class='comment_list']/li[{comment_idx}]/div/div/div[@class='comment_info_box']/span").text.strip()
+                            except:
+                                 time_of_comment = "NA"
                             data = {
                             "Time_of_Scraping": time_of_scraping,
                             "Category": category,
@@ -309,13 +382,9 @@ def extract(driver, output_file_path):
                         time.sleep(3)
                     except:
                         break
-            try:
-                driver.get(links_buttons[link_idx])
-                time.sleep(3)
-            except:
-                links_flag = False
-                first_flag += 1
-                break    
+
+        
+        
 
         # ends
 
@@ -329,14 +398,12 @@ def main():
 
     driver = webdriver.Chrome(options=options)
     driver.maximize_window()
-
     driver.get("https://nid.naver.com/nidlogin.login")
     # login(driver,"bizlab2024","bizlab2024**")
     time.sleep(40)  
     # time.sleep(2)
-    driver.get("https://cafe.naver.com/jihosoccer123?iframe_url=/ArticleList.nhn%3Fsearch.clubid=23611966%26search.boardtype=L%26search.totalCount=151%26search.cafeId=23611966%26search.page=17")
-    time.sleep(2)
-    extract(driver, output_file_path)
+    url = "https://cafe.naver.com/jihosoccer123"
+    extract(driver, output_file_path, url)
 
 
 main()

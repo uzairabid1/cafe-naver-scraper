@@ -8,7 +8,7 @@ except UnicodeDecodeError as e:
     # You might want to add more specific handling based on your use case
 
 # Continue with the rest of your processing, assuming data is loaded successfully
-writer = pd.ExcelWriter('output_ulta.xlsx')
+writer = pd.ExcelWriter('output.xlsx')
 data.to_excel(writer, index=False)
 writer.close()
 
